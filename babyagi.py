@@ -265,6 +265,7 @@ def limit_tokens_from_string(string: str, model: str, limit: int) -> str:
 
 def openai_call(
     prompt: str,
+    jsonSchema: List[Dict] = None,
     model: str = LLM_MODEL,
     temperature: float = OPENAI_TEMPERATURE,
     max_tokens: int = MAX_TOKEN,
@@ -288,16 +289,32 @@ def openai_call(
                 return user_input_await(prompt)
             elif not model.lower().startswith("gpt-"):
                 # Use completion API
-                response = openai.Completion.create(
-                    engine=model,
-                    prompt=prompt,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    top_p=1,
-                    frequency_penalty=0,
-                    presence_penalty=0,
-                )
-                return response.choices[0].text.strip()
+                if jsonSchema:
+                    response = openai.Completion.create(
+                        engine=model,
+                        prompt=prompt,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        top_p=1,
+                        frequency_penalty=0,
+                        presence_penalty=0,
+                        functions=[
+                            {"name": "set_definition", "parameters": jsonSchema}
+                        ],
+                        function_call={"name": "set_definition"},
+                    )
+                    return response.choices[0].text.function_call.arguments
+                else:
+                    response = openai.Completion.create(
+                        engine=model,
+                        prompt=prompt,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        top_p=1,
+                        frequency_penalty=0,
+                        presence_penalty=0,
+                    )
+                    return response.choices[0].text.strip()
             else:
                 # Use 8000 instead of the real limit (8194) to give a bit of wiggle room for the encoding of roles.
                 # TODO: different limits for different models.
@@ -306,15 +323,30 @@ def openai_call(
 
                 # Use chat completion API
                 messages = [{"role": "system", "content": trimmed_prompt}]
-                response = openai.ChatCompletion.create(
-                    model=model,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    n=1,
-                    stop=None,
-                )
-                return response.choices[0].message.content.strip()
+                if jsonSchema:
+                    response = openai.ChatCompletion.create(
+                        model=model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        n=1,
+                        stop=None,
+                        functions=[
+                            {"name": "set_definition", "parameters": jsonSchema}
+                        ],
+                        function_call={"name": "set_definition"},
+                    )
+                    return response.choices[0].message.function_call.arguments
+                else:
+                    response = openai.ChatCompletion.create(
+                        model=model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        n=1,
+                        stop=None,
+                    )
+                    return response.choices[0].message.content.strip()
         except openai.error.RateLimitError:
             log(
                 "   *** The OpenAI API rate limit has been exceeded. Waiting 10 seconds and trying again. ***"
@@ -355,28 +387,6 @@ def task_creation_agent(
 
 Afterwards, organize the tasks, remove any unnecessary tasks for the objective, and output them as a JSON array following the example below. Please never output anything other than a JSON array.
 
-# Example of JSON array output"""
-    prompt += """
-[
-    {
-        "type": "command",
-        "content": "echo 'import os\\n# HOW TO USE*\\n# 1. Fork this into a private Repl\\n# 2. Add your OpenAI API Key and Pinecone API Key\\n# 4. Update the OBJECTIVE variable\\n# 5. Press \\"Run\\" at the top.\\n# NOTE: the first time you run, it will initiate the table first - which may take a few minutes, you'\\\\''ll be waiting at the initial OBJECTIVE phase. If it fails, try again.)\\n#\\n# WARNING: THIS CODE WILL KEEP RUNNING UNTIL YOU STOP IT. BE MINDFUL OF OPENAI API BILLS. DELETE PINECONE INDEX AFTER USE.\\n\\nimport subprocess\\nimport openai\\n#import pinecone\\nimport time\\nimport json\\nfrom collections import deque\\nfrom typing import Dict, List\\n\\n#Set API Keys\\nOPENAI_API_KEY = os.environ['\\\\''OPEN_API_KEY'\\\\'']\\n#PINECONE_API_KEY = os.environ['\\\\''PINECONE_API_KEY'\\\\'']\\n#PINECONE_ENVIRONMENT = os.environ['\\\\''PINECONE_ENVIRONMENT'\\\\''] #Pinecone Environment (eg. \\"us-east1-gcp\\")\\n\\n#Set Variables\\nYOUR_TABLE_NAME = \\"test-table\\"\\nOBJECTIVE = \\"Implement a game of Minesweeper in python and run it in python.\\"\\nYOUR_FIRST_TASK = \\"Develop a task list.\\"\\n\\nMODEL = \\"gpt-4\\"\\nMAX_TOKEN = 7000\\n\\n#Print OBJECTIVE\\nprint(\\"\\\\033[96m\\\\033[1m\\" + \\"OBJECTIVE\\\\n\\\\n\\" + \\"\\\\033[0m\\\\033[0m\\")\\nprint(OBJECTIVE + \\"\\\\n\\\\n\\")\\n\\n# Configure OpenAI and Pinecone\\nopenai.api_key = OPENAI_API_KEY\\n#pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)\\n\\n# Create Pinecone index\\n#table_name = YOUR_TABLE_NAME' > ./output/sample.py"
-    },
-    {
-        "type": "plan",
-        "content": "Develop a task list."
-    },
-    {
-        "type": "command",
-        "content": "cd /dir1/dir2/"
-    },
-    {
-        "type": "command",
-        "content": "mkdir ./dir3/dir4"
-    }
-]"""
-    prompt += f"""
-
 The following is the execution result of the last planned task.
 
 # Last executed planned task
@@ -392,18 +402,64 @@ The following is the execution result of the last planned task.
 {json.dumps(list(task_list))}"""
 
     prompt = prompt[:MAX_STRING_LENGTH]
-    prompt += """
-
-# Absolute Rule
-Please never output anything other than a JSON array."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
-    jsonValue = openai_call(prompt)
+    
+    jsonSchema = {
+        "type": "object",
+        "properties": {
+            "tasks": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "command",
+                                "plan"
+                            ],
+                            "description": "The type of task to be executed.",
+                        },
+                        "content": {
+                            "type": "string",
+                            "description": "The content of the task to be executed.",
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "content"
+                    ],
+                    "description": "A task to be executed.",
+                    "examples": [
+                        {
+                            "type": "command",
+                            "content": "curl https://www.google.com/"
+                        },
+                        {
+                            "type": "command",
+                            "content": "cd /dir1/dir2/"
+                        },
+                        {
+                            "type": "command",
+                            "content": "mkdir ./dir3/dir4"
+                        },
+                        {
+                            "type": "plan",
+                            "content": "Develop a task list."
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    jsonValue = openai_call(prompt, jsonSchema)
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
         jsonValue + "\n\n")
     try:
-        return json.loads(jsonValue)
+        return json.loads(jsonValue)["tasks"]
     except Exception as error:
         log("json parse error:")
         log(error)
@@ -417,29 +473,7 @@ def check_completion_agent(
 
 If the objective is achieved based on the results, output only the string "Complete" instead of an array. In that case, never output anything other than "Complete".
 
-If the objective is not achieved based on the results, remove the executed tasks, and create new tasks if needed. Then, organize the tasks, delete unnecessary tasks for the objective, and output only a JSON array referring to the example below. In that case, never output anything other than the JSON array.
-
-# Example of JSON array output"""
-    prompt += """
-[
-    {
-        "type": "command",
-        "content": "echo 'import os\\n# HOW TO USE*\\n# 1. Fork this into a private Repl\\n# 2. Add your OpenAI API Key and Pinecone API Key\\n# 4. Update the OBJECTIVE variable\\n# 5. Press \\"Run\\" at the top.\\n# NOTE: the first time you run, it will initiate the table first - which may take a few minutes, you'\\\\''ll be waiting at the initial OBJECTIVE phase. If it fails, try again.)\\n#\\n# WARNING: THIS CODE WILL KEEP RUNNING UNTIL YOU STOP IT. BE MINDFUL OF OPENAI API BILLS. DELETE PINECONE INDEX AFTER USE.\\n\\nimport subprocess\\nimport openai\\n#import pinecone\\nimport time\\nimport json\\nfrom collections import deque\\nfrom typing import Dict, List\\n\\n#Set API Keys\\nOPENAI_API_KEY = os.environ['\\\\''OPEN_API_KEY'\\\\'']\\n#PINECONE_API_KEY = os.environ['\\\\''PINECONE_API_KEY'\\\\'']\\n#PINECONE_ENVIRONMENT = os.environ['\\\\''PINECONE_ENVIRONMENT'\\\\''] #Pinecone Environment (eg. \\"us-east1-gcp\\")\\n\\n#Set Variables\\nYOUR_TABLE_NAME = \\"test-table\\"\\nOBJECTIVE = \\"Implement a game of Minesweeper in python and run it in python.\\"\\nYOUR_FIRST_TASK = \\"Develop a task list.\\"\\n\\nMODEL = \\"gpt-4\\"\\nMAX_TOKEN = 7000\\n\\n#Print OBJECTIVE\\nprint(\\"\\\\033[96m\\\\033[1m\\" + \\"OBJECTIVE\\\\n\\\\n\\" + \\"\\\\033[0m\\\\033[0m\\")\\nprint(OBJECTIVE + \\"\\\\n\\\\n\\")\\n\\n# Configure OpenAI and Pinecone\\nopenai.api_key = OPENAI_API_KEY\\n#pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)\\n\\n# Create Pinecone index\\n#table_name = YOUR_TABLE_NAME' > ./output/sample.py"
-    },
-    {
-        "type": "plan",
-        "content": "Develop a task list."
-    },
-    {
-        "type": "command",
-        "content": "cd /dir1/dir2/"
-    },
-    {
-        "type": "command",
-        "content": "mkdir ./dir3/dir4"
-    }
-]"""
-    prompt += f"""          
+If the objective is not achieved based on the results, remove the executed tasks, and create new tasks if needed. Then, organize the tasks, delete unnecessary tasks for the objective, and output only a JSON array referring to the example below. In that case, never output anything other than the JSON array.      
 
 Below is the result of the last execution.
 
@@ -456,20 +490,66 @@ Below is the result of the last execution.
 {json.dumps(list(task_list))}"""
 
     prompt = prompt[:MAX_STRING_LENGTH]
-    prompt += """
-
-# Absolute Rule
-If the output is anything other than "Complete", please never output anything other than a JSON array."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
-    jsonValue = openai_call(prompt)
+    
+    jsonSchema = {
+        "type": "object",
+        "properties": {
+            "tasks": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "command",
+                                "plan"
+                            ],
+                            "description": "The type of task to be executed.",
+                        },
+                        "content": {
+                            "type": "string",
+                            "description": "The content of the task to be executed.",
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "content"
+                    ],
+                    "description": "A task to be executed.",
+                    "examples": [
+                        {
+                            "type": "command",
+                            "content": "curl https://www.google.com/"
+                        },
+                        {
+                            "type": "command",
+                            "content": "cd /dir1/dir2/"
+                        },
+                        {
+                            "type": "command",
+                            "content": "mkdir ./dir3/dir4"
+                        },
+                        {
+                            "type": "plan",
+                            "content": "Develop a task list."
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    jsonValue = openai_call(prompt, jsonSchema)
     log("\033[31m\033[1m" + "[[Response]]" + "\033[0m\033[0m" + "\n\n" +
         jsonValue + "\n\n")
     if jsonValue == "Complete":
         return jsonValue
     try:
-        return json.loads(jsonValue)
+        return json.loads(jsonValue)["tasks"]
     except Exception as error:
         log("json parse error:")
         log(error)
