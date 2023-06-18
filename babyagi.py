@@ -655,7 +655,7 @@ def execution_command(objective: str, command: str, task_list: deque,
                 lastlines = "\n".join(lastlines)
                 input = user_input_for_waiting(objective, lastlines, command,
                                          "".join(std_blocks), task_list,
-                                         executed_task_list)
+                                         executed_task_list, current_dir)
                 if input == 'BabyCommandAGI: Complete':
                     return input
                 elif input == 'BabyCommandAGI: Interruption':
