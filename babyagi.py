@@ -473,7 +473,7 @@ Please never output anything other than a "Example of tasks output" format that 
 def check_completion_agent(
         objective: str, enriched_result: dict, task_list: deque, executed_task_list: deque, current_dir: str
 ):
-    prompt = f"""You are an AI that checks whether the "{objective}" has been achieved based on the results, and if not, manages the remaining tasks. Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate planned tasks with reduced granularity.
+    prompt = f"""You are an AI that checks whether the "{objective}" has been achieved based on the results, and if not, manages the remaining tasks. Before you begin to create or organize tasks, please make your own assumptions, clarify them, and then execute. Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate planned tasks with reduced granularity.
 
 If the objective is achieved based on the results, output only the string "Complete" instead of a "Example of tasks output" format. In that case, never output anything other than "Complete".
 
