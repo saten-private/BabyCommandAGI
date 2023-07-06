@@ -1,8 +1,8 @@
-from typing import Dict, List
+from collections import deque
 
 class ExecutedTaskParser:
 
-    def encode(self, input_data: List[dict]) -> str:
+    def encode(self, input_data: deque) -> str:
         output = ""
         for item in input_data:
             output += f"{item['type']}: {item['target']}\n"

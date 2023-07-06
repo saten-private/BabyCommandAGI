@@ -471,7 +471,7 @@ Please never output anything other than a "Example of tasks output" format that 
         return task_creation_agent(objective, result, task_description, task_list, executed_task_list, current_dir)
 
 def check_completion_agent(
-        objective: str, enriched_result: Dict, task_list: deque, executed_task_list: deque, current_dir: str
+        objective: str, enriched_result: dict, task_list: deque, executed_task_list: deque, current_dir: str
 ):
     prompt = f"""You are an AI that checks whether the "{objective}" has been achieved based on the results, and if not, manages the remaining tasks. Please try to make the tasks you generate as necessary so that they can be executed by writing a single file or in a terminal. If that's difficult, generate planned tasks with reduced granularity.
 
@@ -582,7 +582,7 @@ If the output is anything other than "Complete", please never output anything ot
         return check_completion_agent(objective, enriched_result, task_list, executed_task_list, current_dir)
 
 def plan_agent(objective: str, task: str,
-               executed_task_list: deque, current_dir: str) -> str:
+               executed_task_list: deque, current_dir: str):
   #context = context_agent(index=YOUR_TABLE_NAME, query=objective, n=5)
     prompt = f"""You are a best engineer.
 Based on the following OBJECTIVE, Before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output in the format of "Example of output" that always includes "type:" before the ``` block.
@@ -915,7 +915,7 @@ def main():
             # Check executable command
             if task['type'].startswith("write") or task['type'].startswith("command"):
 
-                enriched_result = None
+                enriched_result = {}
                 is_check_result = False
                 is_next_plan = False
                 is_complete = False

@@ -1,4 +1,5 @@
 from typing import Dict, List
+from collections import deque
 
 class TaskParser:
 
@@ -126,11 +127,11 @@ class _MyHomePageState extends State<MyHomePage> {
         print(parsed_data)
         print(self.encode(parsed_data))
 
-    def decode(self, input_string: str) -> List[dict]:
+    def decode(self, input_string: str) -> deque:
         data = input_string.strip().split("type:")[1:]
         if len(data) == 0:
             raise ValueError("No valid items found")
-        parsed_data = []
+        parsed_data = deque([])
 
         for item in data:
             item = "type:" + item.strip()
@@ -179,7 +180,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
         return type_line, path_line, content
     
-    def encode(self, input_data: List[dict]) -> str:
+    def encode(self, input_data: deque) -> str:
         output = ""
         for item in input_data:
             output += f"type: {item['type']}\n"
