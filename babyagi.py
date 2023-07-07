@@ -477,7 +477,7 @@ def check_completion_agent(
 
 If the objective is achieved based on the results, output only the string "Complete" instead of a "Example of tasks output" format. In that case, never output anything other than "Complete".
 
-If the objective is not achieved based on the results, remove the executed tasks, and create new tasks if needed. Then, organize the tasks, delete unnecessary tasks for the objective, and output them as a format following the "Example of tasks output" below. Please never output anything other than a "Example of tasks output" format.
+If the objective is not achieved based on the results, remove the executed tasks, and create new tasks if needed. Then, organize the tasks, delete unnecessary tasks for the objective, and output them as a format following the "Example of tasks output" format that always includes "type:" before the ``` block below. Please never output anything other than a "Example of tasks output" format that always includes "type:" before the ``` block.
 
 Below is the result of the last execution."""
 
