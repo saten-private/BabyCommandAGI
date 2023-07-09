@@ -585,7 +585,7 @@ def plan_agent(objective: str, task: str,
                executed_task_list: deque, current_dir: str):
   #context = context_agent(index=YOUR_TABLE_NAME, query=objective, n=5)
     prompt = f"""You are a best engineer.
-Based on the following OBJECTIVE, Before you begin the following single task, please make your own assumptions, clarify them, and then execute, and absolutely output in the format of "Example of output" that always includes "type:" before the ``` block.
+Based on the following OBJECTIVE, Before you begin the following single task, please make your own assumptions, clarify them, and then execute, without any omission, and absolutely output in the format of "Example of output" that always includes "type:" before the ``` block, without any omission.
 
 # OBJECTIVE
 {objective}
@@ -647,7 +647,7 @@ class Minesweeper:
 ```
 
 # Absolute Rule
-Please never output anything other than a "Example of output" format that always includes "type:" before the ``` block."""
+Please never output anything other than a "Example of output" format that always includes "type:" before the ``` block, without any omission."""
 
     log("\033[34m\033[1m" + "[[Prompt]]" + "\033[0m\033[0m" + "\n\n" + prompt +
         "\n\n")
