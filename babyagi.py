@@ -644,6 +644,23 @@ def llm_call(
                         }
                     ]
 
+                    tools = [
+                        {
+                            "name": "command",
+                            "description": "Execute shell command for a given text.",
+                            "input_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "command": {
+                                        "type": "string",
+                                        "description": "shell command, e.g. 'apt-get update', 'git clone https://github.com/samuelcust/flappy-bird-assets.git'"
+                                    }
+                                },
+                                "required": ["ticker"]
+                            }
+                        }
+                    ]
+
                     # log("【MESSAGES】")
                     # log(json.dumps(messages))
 
