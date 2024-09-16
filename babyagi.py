@@ -96,6 +96,8 @@ TOKEN_COUNT_MODEL = os.getenv("TOKEN_COUNT_MODEL", "claude-3-5-sonnet-20240620")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY= os.getenv("ANTHROPIC_API_KEY", "")
 GOOGLE_AI_STUDIO_API_KEY =  os.getenv("GOOGLE_AI_STUDIO_API_KEY", "")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+
 
 if not (LLM_MODEL.startswith("llama") or LLM_MODEL.startswith("human")):
     assert ANTHROPIC_API_KEY, "\033[91m\033[1m" + "ANTHROPIC_API_KEY environment variable is missing from .env" + "\033[0m\033[0m"
@@ -117,13 +119,18 @@ MAX_MARGIN_TOKEN = 200 # Allow enough tokens to avoid being on the edge
 MAX_MODEL_OUTPUT_TOKEN = 4 * 1024 # default value
 MAX_MODEL_INPUT_TOKEN = 128 * 1024 # default value
 # Maximum number of tokens is confirmed below
-# https://platform.openai.com/docs/models/gpt-4o
-MAX_CHATGPT_4O_LATEST_OUTPUT_TOKEN = 16 * 1024
-MAX_CHATGPT_4O_LATEST_INPUT_TOKEN = 128 * 1024
-# Maximum number of tokens is confirmed below
 # https://context.ai/compare/gpt-4o/claude-3-5-sonnet
 MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN = 8 * 1024
 MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN = 200 * 1024
+# Maximum number of tokens is confirmed below
+# https://context.ai/compare/o1-preview/gpt-4o
+MAX_O1_PREVIEW_OUTPUT_TOKEN = 32 * 1024
+MAX_O1_PREVIEW_INPUT_TOKEN = 128 * 1024
+# Maximum number of tokens is confirmed below
+# https://platform.openai.com/docs/models/gpt-4o
+MAX_CHATGPT_4O_LATEST_OUTPUT_TOKEN = 16 * 1024
+MAX_CHATGPT_4O_LATEST_INPUT_TOKEN = 128 * 1024
+
 
 MAX_COMMAND_RESULT_TOKEN = 8 * 1024
 MAX_DUPLICATE_COMMAND_RESULT_TOKEN = 1 * 1024
@@ -276,6 +283,16 @@ elif LLM_MODEL.startswith("gpt-4"):
     log(
         "\033[91m\033[1m"
         + "\n*****USING GPT-4. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
+        + "\033[0m\033[0m"
+    )
+
+elif LLM_MODEL.startswith("openai/o1-preview"):
+    MAX_MODEL_OUTPUT_TOKEN = MAX_O1_PREVIEW_OUTPUT_TOKEN
+    MAX_MODEL_INPUT_TOKEN = MAX_O1_PREVIEW_INPUT_TOKEN
+
+    log(
+        "\033[91m\033[1m"
+        + "\n*****USING openrouter openai/o1-preview. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
         + "\033[0m\033[0m"
     )
 
@@ -715,6 +732,28 @@ def llm_call(
                 log(f"【USAGE】output_tokens :{response.usage.output_tokens}")
 
                 return response.content[0].text.strip()
+            elif model.lower().startswith("openai/"): # OpenRouter's OpenAI
+
+                openai_client = OpenAI(
+                    base_url="https://openrouter.ai/api/v1",
+                    api_key=OPENROUTER_API_KEY)
+
+                log(f"【MODEL】: OpenRouter {model}")
+
+                messages = [{"role": "system", "content": prompt}]
+                response = openai_client.chat.completions.create(
+                    extra_headers={
+                        "HTTP-Referer": "https://github.com/saten-private/BabyCommandAGI", # Optional, for including your app on openrouter.ai rankings.
+                        "X-Title": "BabyCommandAGI", # Optional. Shows in rankings on openrouter.ai.
+                    },
+                    model=model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+
+                return response.choices[0].message.content.strip()
+
             else:
 
                 openai_client = OpenAI(api_key=OPENAI_API_KEY)
