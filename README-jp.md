@@ -1,4 +1,4 @@
-# ⭐️Claude 3.5 Sonnet(8Kアウトプット)とGPT-4oに対応⭐️
+# ⭐️o1-preview(OpenRouter)とClaude 3.5 Sonnet(8Kアウトプット)に対応⭐️
 
 # 注意事項
 

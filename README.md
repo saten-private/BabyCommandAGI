@@ -1,4 +1,4 @@
-# ⭐️Now supported Claude 3.5 Sonnet(8K output) and GPT-4o⭐️
+# ⭐️Now supported o1-preview(OpenRouter) and Claude 3.5 Sonnet(8K output)⭐️
 
 # Precautions
 
