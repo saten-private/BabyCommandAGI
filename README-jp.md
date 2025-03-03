@@ -1,17 +1,17 @@
-# ⭐️o1-preview(OpenRouter)とClaude 3.5 Sonnet(8Kアウトプット)に対応⭐️
+# ⭐️Claude 3.7 Sonnet(Extended Thinking含む)とo3-mini-hight(OpenRouter)に対応⭐️
 
 # 注意事項
 
 - 意図せず環境を破壊する恐れがあります。基本的にはDockerなどの仮想環境で実行してください。
 - 目的を達成できず、ループし続けることがあります。その際にAPIの使用量が多くなることがありますので、責任を持って使用してください
-- 基本的にはClaude 3.5 Sonnet以上で検証しているため、Claude 3.5 Sonnet以上の使用を推奨します(BabyCommandAGIではClaude 3.5 Sonnetを使用すると[こちら](https://x.com/alexalbert__/status/1812921642143900036) の8Kアウトプットが使用されます)
+- 基本的にはClaude 3.7 Sonnet以上で検証しているため、Claude 3.7 Sonnet以上の使用を推奨します
 (GPT-4 Turboを利用する場合は旧バージョンのBabyCommandAGIのv3を使用することを推奨します)
 
 # 目的
 
 BabyCommandAGIはGUIよりも古くからあるコンピューターとの対話インタフェースであるCLIとLLMを組み合わせた時、何が起きるのか検証するためのものです。コンピューターに詳しくない方はご存知無いかもしれませんが、CLIは古くからあるコンピューターとの対話インターフェースです。現在もCLIを通すことで多くのコンピューターの操作ができます(よくあるLinuxサーバーはCLIを主に使用します)。LLMとCLIが会話するのを想像してみてください。何が起きるかワクワクしますよね。是非皆さんも触って新しいユースケースを見つけて頂けると幸いです。
 
-このシステムを動かすにはClaude 3.5 Sonnet以上のAPIを推奨します。
+このシステムを動かすにはClaude 3.7 Sonnet以上のAPIを推奨します。
 
 このPythonスクリプトのシステムは[BabyAGI](https://github.com/yoheinakajima/babyagi)をベースにしています。但し、[BabyAGI](https://github.com/yoheinakajima/babyagi)の思考部分だった箇所について効率良くコマンドが実行するためにかなり簡略化してしまっています。(後に変えていくかもしれません)
 

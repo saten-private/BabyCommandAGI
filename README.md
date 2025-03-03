@@ -1,17 +1,17 @@
-# ⭐️Now supported o1-preview(OpenRouter) and Claude 3.5 Sonnet(8K output)⭐️
+# ⭐️Now supported Claude 3.7 Sonnet (including extended thinking) and o3-mini-hight (OpenRouter)⭐️
 
 # Precautions
 
-- There is a risk of inadvertently damaging the environment. Please execute primarily in a virtual environment such as Docker.
-- The objective may not be achieved and it may continue to loop. The amount of API usage may increase in such cases, so please use responsibly.
-- It is recommended to use Claude 3.5 Sonnet or higher as it has been mainly verified with Claude 3.5 Sonnet or higher. (BabyCommandAGI uses the 8K output of [here](https://x.com/alexalbert__/status/1812921642143900036) when using Claude 3.5 Sonnet)
-(If you are using GPT-4 Turbo, it is recommended to use v3 of the older BabyCommandAGI.)
+- It may unintentionally destroy the environment. Basically, run it in a virtual environment such as Docker.
+- It may fail to achieve its purpose and keep looping. (The API usage may increase in such cases, so please use it responsibly.
+- Basically, we recommend using Claude 3.7 Sonnet or higher, as it has been verified with Claude 3.7 Sonnet or higher
+(If you are using GPT-4 Turbo, it is recommended to use v3 of the older version of BabyCommandAGI)
 
 # Objective
 
 BabyCommandAGI is designed to test what happens when you combine CLI and LLM, which are older computer interaction interfaces than GUI. Those who are not familiar with computers may not know, but CLI is an old computer interaction interface. Even now, many computer operations can be done through CLI (common Linux servers mainly use CLI). Imagine LLM and CLI having a conversation. It's exciting to think about what could happen. I hope you will all try it out and find new use cases.
 
-This system is recommended to be run with an API of Claude 3.5 Sonnet or higher.
+This system is recommended to be run with an API of Claude 3.7 Sonnet or higher.
 
 This Python script system is based on [BabyAGI](https://github.com/yoheinakajima/babyagi). However, the part that was the thinking part of [BabyAGI](https://github.com/yoheinakajima/babyagi) has been greatly simplified in order to execute commands efficiently. (This may change later)
 
