@@ -131,6 +131,10 @@ MAX_O1_PREVIEW_INPUT_TOKEN = 128 * 1024
 MAX_CLAUDE_3_7_SONNET_THINKING_OUTPUT_TOKEN = 128 * 1000
 MAX_CLAUDE_3_7_SONNET_THINKING_INPUT_TOKEN = 200 * 1000
 # Maximum number of tokens is confirmed below
+# https://docsbot.ai/models/compare/claude-3-7-sonnet/claude-3-7-sonnet-extended-thinking
+MAX_CLAUDE_3_7_SONNET_OUTPUT_TOKEN = 128 * 1000
+MAX_CLAUDE_3_7_SONNET_INPUT_TOKEN = 200 * 1000
+# Maximum number of tokens is confirmed below
 # https://context.ai/compare/gpt-4o/claude-3-5-sonnet
 MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN = 8 * 1024
 MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN = 200 * 1024
@@ -324,8 +328,13 @@ elif LLM_MODEL.startswith("chatgpt-4o-latest"):
     )
 
 elif LLM_MODEL.startswith("claude-3-7-sonnet"):
-    MAX_MODEL_OUTPUT_TOKEN = MAX_CLAUDE_3_7_SONNET_THINKING_OUTPUT_TOKEN
-    MAX_MODEL_INPUT_TOKEN = MAX_CLAUDE_3_7_SONNET_THINKING_INPUT_TOKEN
+    if "-thinking" in LLM_MODEL.lower():
+        MAX_MODEL_OUTPUT_TOKEN = MAX_CLAUDE_3_7_SONNET_THINKING_OUTPUT_TOKEN
+        MAX_MODEL_INPUT_TOKEN = MAX_CLAUDE_3_7_SONNET_THINKING_INPUT_TOKEN
+    else:
+        # Use regular Claude limits when not in thinking mode
+        MAX_MODEL_OUTPUT_TOKEN = MAX_CLAUDE_3_7_SONNET_OUTPUT_TOKEN
+        MAX_MODEL_INPUT_TOKEN = MAX_CLAUDE_3_7_SONNET_INPUT_TOKEN
     TEMPERATURE = float(os.getenv("ANTHROPIC_TEMPERATURE", "0.0"))
 
     log(
@@ -738,21 +747,35 @@ def llm_call(
                     # log(json.dumps(messages))
 
                     if model.lower().startswith("claude-3-7-sonnet"):
-                        stream_response = anthropic_client.messages.create(
-                            model=LLM_VISION_MODEL,
-                            messages=messages,
-                            max_tokens=max_tokens,
-                            thinking={"type": "enabled", "budget_tokens": 32000},
-                            extra_headers={"anthropic-beta": "output-128k-2025-02-19"}, # For extended-thinking https://docs.anthropic.com/en/docs/about-claude/models/extended-thinking-models
-                            stream=True
-                        )
+                        if "-thinking" in model.lower():
+                            # Remove the "-thinking" suffix from the model if present, then call the API with thinking enabled
+                            model_name = model.replace("-thinking", "")
+                            stream_response = anthropic_client.messages.create(
+                                model=model_name,
+                                messages=messages,
+                                max_tokens=max_tokens,
+                                thinking={"type": "enabled", "budget_tokens": 32000},
+                                extra_headers={"anthropic-beta": "output-128k-2025-02-19"},  # For extended-thinking https://docs.anthropic.com/en/docs/about-claude/models/extended-thinking-models
+                                stream=True
+                            )
+                        else:
+                            # Regular API call for non-thinking mode
+                            stream_response = anthropic_client.messages.create(
+                                model=model,
+                                messages=messages,
+                                temperature=temperature,
+                                max_tokens=max_tokens,
+                                extra_headers={"anthropic-beta": "output-128k-2025-02-19"}, # For extended-thinking https://docs.anthropic.com/en/docs/about-claude/models/extended-thinking-models
+                                stream=True
+                            )
+
                         full_text = ""
                         for chunk in stream_response:
                             if hasattr(chunk, "delta") and getattr(chunk.delta, "text", None):
                                 full_text += chunk.delta.text
                                 log(f"chunk.delta.text: {chunk.delta.text}")
                             log(f"Chunk received: {chunk}")
-                        return full_text.strip()
+                            return full_text.strip()
                     elif model.lower().startswith("claude-3-5-sonnet"):
                         response = anthropic_client.messages.create(
                             model=LLM_VISION_MODEL,
@@ -773,14 +796,28 @@ def llm_call(
                     messages = [{"role": "user", "content": prompt}]
 
                     if model.lower().startswith("claude-3-7-sonnet"):
-                        stream_response = anthropic_client.messages.create(
-                            model=model,
-                            messages=messages,
-                            max_tokens=max_tokens,
-                            thinking={"type": "enabled", "budget_tokens": 32000},
-                            extra_headers={"anthropic-beta": "output-128k-2025-02-19"}, # For 8K output https://x.com/alexalbert__/status/1812921642143900036
-                            stream=True
-                        )
+                        if "-thinking" in model.lower():
+                            # Remove the "-thinking" suffix from the model if present, then call the API with thinking enabled
+                            model_name = model.replace("-thinking", "")
+                            stream_response = anthropic_client.messages.create(
+                                model=model_name,
+                                messages=messages,
+                                max_tokens=max_tokens,
+                                thinking={"type": "enabled", "budget_tokens": 32000},
+                                extra_headers={"anthropic-beta": "output-128k-2025-02-19"}, # For extended-thinking https://docs.anthropic.com/en/docs/about-claude/models/extended-thinking-models
+                                stream=True
+                            )
+                        else:
+                            # Regular API call for non-thinking mode
+                            stream_response = anthropic_client.messages.create(
+                                model=model,
+                                messages=messages,
+                                temperature=temperature,
+                                max_tokens=max_tokens,
+                                extra_headers={"anthropic-beta": "output-128k-2025-02-19"}, # For extended-thinking https://docs.anthropic.com/en/docs/about-claude/models/extended-thinking-models
+                                stream=True
+                            )
+
                         full_text = ""
                         for chunk in stream_response:
                             if hasattr(chunk, "delta") and getattr(chunk.delta, "text", None):
@@ -788,6 +825,7 @@ def llm_call(
                                 log(f"chunk.delta.text: {chunk.delta.text}")
                             log(f"Chunk received: {chunk}")
                         return full_text.strip()
+                    
                     elif model.lower().startswith("claude-3-5-sonnet"):
                         response = anthropic_client.messages.create(
                             model=model,
