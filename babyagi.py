@@ -139,13 +139,6 @@ MAX_DUPLICATE_COMMAND_RESULT_TOKEN = 1 * 1024
 ORIGINAL_OBJECTIVE = os.getenv("OBJECTIVE", "")
 INITIAL_TASK = os.getenv("INITIAL_TASK", "")
 
-# Model configuration
-OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", 0.0))
-ANTHROPIC_TEMPERATURE = float(os.getenv("ANTHROPIC_TEMPERATURE", 0.0))
-GEMINI_TEMPERATURE = float(os.getenv("GEMINI_TEMPERATURE", 0.0))
-
-TEMPERATURE = OPENAI_TEMPERATURE # default value
-
 # Set Variables
 hash_object = hashlib.sha1(ORIGINAL_OBJECTIVE.encode())
 hex_dig = hash_object.hexdigest()
@@ -256,6 +249,7 @@ if LLM_MODEL.startswith("llama"):
 
         CTX_MAX = 1024
         LLAMA_THREADS_NUM = int(os.getenv("LLAMA_THREADS_NUM", 8))
+        TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
 
         log('Initialize model for evaluation')
         llm = Llama(
@@ -278,6 +272,7 @@ if LLM_MODEL.startswith("llama"):
             + "\033[0m\033[0m"
         )
         LLM_MODEL = "gpt-4o"
+        TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
 
 elif LLM_MODEL.startswith("gpt-4"):
     log(
@@ -285,10 +280,12 @@ elif LLM_MODEL.startswith("gpt-4"):
         + "\n*****USING GPT-4. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
         + "\033[0m\033[0m"
     )
+    TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
 
 elif LLM_MODEL.startswith("openai/o1-preview"):
     MAX_MODEL_OUTPUT_TOKEN = MAX_O1_PREVIEW_OUTPUT_TOKEN
     MAX_MODEL_INPUT_TOKEN = MAX_O1_PREVIEW_INPUT_TOKEN
+    TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
 
     log(
         "\033[91m\033[1m"
@@ -299,6 +296,7 @@ elif LLM_MODEL.startswith("openai/o1-preview"):
 elif LLM_MODEL.startswith("chatgpt-4o-latest"):
     MAX_MODEL_OUTPUT_TOKEN = MAX_CHATGPT_4O_LATEST_OUTPUT_TOKEN
     MAX_MODEL_INPUT_TOKEN = MAX_CHATGPT_4O_LATEST_INPUT_TOKEN
+    TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
 
     log(
         "\033[91m\033[1m"
@@ -309,7 +307,7 @@ elif LLM_MODEL.startswith("chatgpt-4o-latest"):
 elif LLM_MODEL.startswith("claude-3-5-sonnet"):
     MAX_MODEL_OUTPUT_TOKEN = MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN
     MAX_MODEL_INPUT_TOKEN = MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN
-    TEMPERATURE = ANTHROPIC_TEMPERATURE
+    TEMPERATURE = float(os.getenv("ANTHROPIC_TEMPERATURE", "0.0"))
 
     log(
         "\033[91m\033[1m"
@@ -318,7 +316,7 @@ elif LLM_MODEL.startswith("claude-3-5-sonnet"):
     )
 
 elif LLM_MODEL.startswith("gemini"):
-    TEMPERATURE = GEMINI_TEMPERATURE
+    TEMPERATURE = float(os.getenv("GEMINI_TEMPERATURE", "0.0"))
 
     log(
         "\033[91m\033[1m"
@@ -332,6 +330,7 @@ elif LLM_MODEL.startswith("human"):
         + "\n*****USING HUMAN INPUT*****"
         + "\033[0m\033[0m"
     )
+    TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
 
 # Max token initialization
 MAX_OUTPUT_TOKEN = MAX_MODEL_OUTPUT_TOKEN
