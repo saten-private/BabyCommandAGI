@@ -119,13 +119,17 @@ MAX_MARGIN_TOKEN = 200 # Allow enough tokens to avoid being on the edge
 MAX_MODEL_OUTPUT_TOKEN = 4 * 1024 # default value
 MAX_MODEL_INPUT_TOKEN = 128 * 1024 # default value
 # Maximum number of tokens is confirmed below
-# https://context.ai/compare/gpt-4o/claude-3-5-sonnet
-MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN = 8 * 1024
-MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN = 200 * 1024
+# https://docsbot.ai/models/compare/o3-mini/claude-3-5-sonnet
+MAX_O3_MINI_OUTPUT_TOKEN = 100 * 1024
+MAX_O3_MINI_INPUT_TOKEN = 200 * 1024
 # Maximum number of tokens is confirmed below
 # https://context.ai/compare/o1-preview/gpt-4o
 MAX_O1_PREVIEW_OUTPUT_TOKEN = 32 * 1024
 MAX_O1_PREVIEW_INPUT_TOKEN = 128 * 1024
+# Maximum number of tokens is confirmed below
+# https://context.ai/compare/gpt-4o/claude-3-5-sonnet
+MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN = 8 * 1024
+MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN = 200 * 1024
 # Maximum number of tokens is confirmed below
 # https://platform.openai.com/docs/models/gpt-4o
 MAX_CHATGPT_4O_LATEST_OUTPUT_TOKEN = 16 * 1024
@@ -281,6 +285,17 @@ elif LLM_MODEL.startswith("gpt-4"):
         + "\033[0m\033[0m"
     )
     TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
+
+elif LLM_MODEL.startswith("o3-mini") or LLM_MODEL.startswith("openai/o3-mini"):
+    MAX_MODEL_OUTPUT_TOKEN = MAX_O3_MINI_OUTPUT_TOKEN
+    MAX_MODEL_INPUT_TOKEN = MAX_O3_MINI_INPUT_TOKEN
+    TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
+
+    log(
+        "\033[91m\033[1m"
+        + "\n*****USING openrouter openai/o1-preview. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
+        + "\033[0m\033[0m"
+    )
 
 elif LLM_MODEL.startswith("openai/o1-preview"):
     MAX_MODEL_OUTPUT_TOKEN = MAX_O1_PREVIEW_OUTPUT_TOKEN
