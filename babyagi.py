@@ -139,6 +139,10 @@ MAX_CLAUDE_3_7_SONNET_INPUT_TOKEN = 200 * 1000
 MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN = 8 * 1024
 MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN = 200 * 1024
 # Maximum number of tokens is confirmed below
+# https://docsbot.ai/models/compare/gpt-4-5/claude-3-7-sonnet
+MAX_GPT_4_5_PREVIEW_OUTPUT_TOKEN = 16 * 1024
+MAX_GPT_4_5_PREVIEW_INPUT_TOKEN = 128 * 1024
+# Maximum number of tokens is confirmed below
 # https://platform.openai.com/docs/models/gpt-4o
 MAX_CHATGPT_4O_LATEST_OUTPUT_TOKEN = 16 * 1024
 MAX_CHATGPT_4O_LATEST_INPUT_TOKEN = 128 * 1024
@@ -286,14 +290,6 @@ if LLM_MODEL.startswith("llama"):
         LLM_MODEL = "gpt-4o"
         TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
 
-elif LLM_MODEL.startswith("gpt-4"):
-    log(
-        "\033[91m\033[1m"
-        + "\n*****USING GPT-4. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
-        + "\033[0m\033[0m"
-    )
-    TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
-
 elif LLM_MODEL.startswith("o3-mini") or LLM_MODEL.startswith("openai/o3-mini"):
     MAX_MODEL_OUTPUT_TOKEN = MAX_O3_MINI_OUTPUT_TOKEN
     MAX_MODEL_INPUT_TOKEN = MAX_O3_MINI_INPUT_TOKEN
@@ -315,6 +311,25 @@ elif LLM_MODEL.startswith("openai/o1-preview"):
         + "\n*****USING openrouter openai/o1-preview. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
         + "\033[0m\033[0m"
     )
+
+elif LLM_MODEL.startswith("gpt-4.5") or LLM_MODEL.startswith("openai/gpt-4.5"):
+    MAX_MODEL_OUTPUT_TOKEN = MAX_GPT_4_5_PREVIEW_OUTPUT_TOKEN
+    MAX_MODEL_INPUT_TOKEN = MAX_GPT_4_5_PREVIEW_INPUT_TOKEN
+    TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
+
+    log(
+        "\033[91m\033[1m"
+        + "\n*****USING gpt-4.5-preview. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
+        + "\033[0m\033[0m"
+    )
+
+elif LLM_MODEL.startswith("gpt-4"):
+    log(
+        "\033[91m\033[1m"
+        + "\n*****USING GPT-4. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
+        + "\033[0m\033[0m"
+    )
+    TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.0"))
 
 elif LLM_MODEL.startswith("chatgpt-4o-latest"):
     MAX_MODEL_OUTPUT_TOKEN = MAX_CHATGPT_4O_LATEST_OUTPUT_TOKEN
