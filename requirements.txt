@@ -6,4 +6,4 @@ pre-commit>=3.2.0
 python-dotenv==1.0.0
 tiktoken==0.7.0
 google-generativeai==0.5.3
-anthropic==0.31.0
+anthropic==0.49.0

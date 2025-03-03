@@ -127,6 +127,10 @@ MAX_O3_MINI_INPUT_TOKEN = 200 * 1024
 MAX_O1_PREVIEW_OUTPUT_TOKEN = 32 * 1024
 MAX_O1_PREVIEW_INPUT_TOKEN = 128 * 1024
 # Maximum number of tokens is confirmed below
+# https://docsbot.ai/models/compare/o3-mini/claude-3-7-sonnet-extended-thinking
+MAX_CLAUDE_3_7_SONNET_THINKING_OUTPUT_TOKEN = 128 * 1000
+MAX_CLAUDE_3_7_SONNET_THINKING_INPUT_TOKEN = 200 * 1000
+# Maximum number of tokens is confirmed below
 # https://context.ai/compare/gpt-4o/claude-3-5-sonnet
 MAX_CLAUDE_3_5_SONNET_OUTPUT_TOKEN = 8 * 1024
 MAX_CLAUDE_3_5_SONNET_INPUT_TOKEN = 200 * 1024
@@ -316,6 +320,17 @@ elif LLM_MODEL.startswith("chatgpt-4o-latest"):
     log(
         "\033[91m\033[1m"
         + "\n*****USING chatgpt-4o-latest. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
+        + "\033[0m\033[0m"
+    )
+
+elif LLM_MODEL.startswith("claude-3-7-sonnet"):
+    MAX_MODEL_OUTPUT_TOKEN = MAX_CLAUDE_3_7_SONNET_THINKING_OUTPUT_TOKEN
+    MAX_MODEL_INPUT_TOKEN = MAX_CLAUDE_3_7_SONNET_THINKING_INPUT_TOKEN
+    TEMPERATURE = float(os.getenv("ANTHROPIC_TEMPERATURE", "0.0"))
+
+    log(
+        "\033[91m\033[1m"
+        + "\n*****USING Claude 3.5. POTENTIALLY EXPENSIVE. MONITOR YOUR COSTS*****"
         + "\033[0m\033[0m"
     )
 
@@ -722,30 +737,70 @@ def llm_call(
                     # log("【MESSAGES】")
                     # log(json.dumps(messages))
 
-                    response = anthropic_client.messages.create(
-                        model=LLM_VISION_MODEL,
-                        messages=messages,
-                        temperature=temperature,
-                        max_tokens=max_tokens,
-                        extra_headers={"anthropic-beta": "max-tokens-3-5-sonnet-2024-07-15"}, # For 8K output https://x.com/alexalbert__/status/1812921642143900036
-                    )
+                    if model.lower().startswith("claude-3-7-sonnet"):
+                        stream_response = anthropic_client.messages.create(
+                            model=LLM_VISION_MODEL,
+                            messages=messages,
+                            max_tokens=max_tokens,
+                            thinking={"type": "enabled", "budget_tokens": 32000},
+                            extra_headers={"anthropic-beta": "output-128k-2025-02-19"}, # For extended-thinking https://docs.anthropic.com/en/docs/about-claude/models/extended-thinking-models
+                            stream=True
+                        )
+                        full_text = ""
+                        for chunk in stream_response:
+                            if hasattr(chunk, "delta") and getattr(chunk.delta, "text", None):
+                                full_text += chunk.delta.text
+                                log(f"chunk.delta.text: {chunk.delta.text}")
+                            log(f"Chunk received: {chunk}")
+                        return full_text.strip()
+                    elif model.lower().startswith("claude-3-5-sonnet"):
+                        response = anthropic_client.messages.create(
+                            model=LLM_VISION_MODEL,
+                            messages=messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            extra_headers={"anthropic-beta": "max-tokens-3-5-sonnet-2024-07-15"}, # For 8K output https://x.com/alexalbert__/status/1812921642143900036
+                        )
+
+                        log(f"【USAGE】input_tokens :{response.usage.input_tokens}")
+                        log(f"【USAGE】output_tokens :{response.usage.output_tokens}")
+
+                        return response.content[0].text.strip()
                 else:
 
                     log(f"【MODEL】:{model}")
 
                     messages = [{"role": "user", "content": prompt}]
-                    response = anthropic_client.messages.create(
-                        model=model,
-                        messages=messages,
-                        temperature=temperature,
-                        max_tokens=max_tokens,
-                        extra_headers={"anthropic-beta": "max-tokens-3-5-sonnet-2024-07-15"}, # For 8K output https://x.com/alexalbert__/status/1812921642143900036
-                    )
 
-                log(f"【USAGE】input_tokens :{response.usage.input_tokens}")
-                log(f"【USAGE】output_tokens :{response.usage.output_tokens}")
+                    if model.lower().startswith("claude-3-7-sonnet"):
+                        stream_response = anthropic_client.messages.create(
+                            model=model,
+                            messages=messages,
+                            max_tokens=max_tokens,
+                            thinking={"type": "enabled", "budget_tokens": 32000},
+                            extra_headers={"anthropic-beta": "output-128k-2025-02-19"}, # For 8K output https://x.com/alexalbert__/status/1812921642143900036
+                            stream=True
+                        )
+                        full_text = ""
+                        for chunk in stream_response:
+                            if hasattr(chunk, "delta") and getattr(chunk.delta, "text", None):
+                                full_text += chunk.delta.text
+                                log(f"chunk.delta.text: {chunk.delta.text}")
+                            log(f"Chunk received: {chunk}")
+                        return full_text.strip()
+                    elif model.lower().startswith("claude-3-5-sonnet"):
+                        response = anthropic_client.messages.create(
+                            model=model,
+                            messages=messages,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            extra_headers={"anthropic-beta": "max-tokens-3-5-sonnet-2024-07-15"}, # For 8K output https://x.com/alexalbert__/status/1812921642143900036
+                        )
 
-                return response.content[0].text.strip()
+                        log(f"【USAGE】input_tokens :{response.usage.input_tokens}")
+                        log(f"【USAGE】output_tokens :{response.usage.output_tokens}")
+
+                        return response.content[0].text.strip()
             elif model.lower().startswith("openai/"): # OpenRouter's OpenAI
 
                 openai_client = OpenAI(
