@@ -156,6 +156,6 @@ BabyCommandAGI はまだ初期段階にあり、その方向性とそこに到�
 </p>
 
 <p align="center">
-<!-- sponsors --><a href="https://github.com/azuss-p"><img src="https:&#x2F;&#x2F;github.com&#x2F;azuss-p.png" width="60px" alt="User avatar: azuss-p" /></a><!-- sponsors -->
+<!-- sponsors --><!-- sponsors -->
 </p>
 
